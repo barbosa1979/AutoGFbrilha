@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horários Admin - AutoGF Brilha</title>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/horariosadmin.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Gestão de Horários</h1>
+
+        <div class="form">
+            <label>Dia:</label>
+            <input type="date" id="dia">
+
+            <label>Hora:</label>
+            <input type="time" id="hora">
+
+            <button id="btnAdicionar">Adicionar Horário</button>
+        </div>
+
+        <table id="tabelaHorarios">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Dia</th>
+                    <th>Hora</th>
+                    <th>Ocupado</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button id="btnVoltar" style="margin-top:20px;">Voltar ao Painel</button>
+        <button id="btnLogout" style="background-color:#c62828; margin-top:10px;">Logout</button>
+
+        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    </div>
+
+    <!-- Supabase UMD (versão correta para GitHub Pages) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+
+    <script>
+        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
+
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const tabela = document.querySelector('#tabelaHorarios tbody');
+        const msg = document.getElementById('msg');
+
+        document.getElementById('btnVoltar').addEventListener('click', () => {
+            window.location.href = 'homeadmin.html';
+        });
+
+        document.getElementById('btnLogout').addEventListener('click', async () => {
+            await client.auth.signOut();
+            window.location.href = 'indexadmin.html';
+        });
+
+        document.getElementById('btnAdicionar').addEventListener('click', async () => {
+            const dia = document.getElementById('dia').value;
+            const hora = document.getElementById('hora').value;
+
+            if (!dia || !hora) {
+                msg.textContent = 'Preencha dia e hora.';
+                return;
+            }
+
+            const { error } = await client
+                .from('horarios')
+                .insert({
+                    dia: dia,
+                    hora: hora,
+                    ocupado: false
+                });
+
+            if (error) {
+                msg.textContent = 'Erro ao adicionar horário.';
+                return;
+            }
+
+            msg.textContent = 'Horário adicionado!';
+            carregarHorarios();
+        });
+
+        async function verificarSessao() {
+            const { data, error } = await client.auth.getUser();
+
+            if (error || !data || !data.user) {
+                msg.textContent = 'Não autenticado — a redirecionar...';
+                setTimeout(() => window.location.href = 'indexadmin.html', 800);
+                return;
+            }
+
+            if (data.user.email !== 'admin@admin.com') {
+                msg.textContent = 'Acesso negado — não é administrador.';
+                await client.auth.signOut();
+                setTimeout(() => window.location.href = 'indexadmin.html', 800);
+                return;
+            }
+
+            carregarHorarios();
+        }
+
+        async function carregarHorarios() {
+            msg.textContent = 'A carregar horários...';
+
+            const { data, error } = await client
+                .from('horarios')
+                .select('*')
+                .order('dia', { ascending: true })
+                .order('hora', { ascending: true });
+
+            if (error) {
+                msg.textContent = 'Erro ao carregar horários.';
+                return;
+            }
+
+            tabela.innerHTML = '';
+
+            data.forEach(h => {
+                const linha = document.createElement('tr');
+
+                linha.innerHTML = `
+                    <td>${h.id}</td>
+                    <td>${h.dia}</td>
+                    <td>${h.hora}</td>
+                    <td>${h.ocupado ? 'Sim' : 'Não'}</td>
+                    <td>
+                        <button onclick="ocupar(${h.id})">Ocupar</button>
+                        <button onclick="libertar(${h.id})" style="background-color:#43a047;">Libertar</button>
+                        <button onclick="apagar(${h.id})" style="background-color:#e53935;">Apagar</button>
+                    </td>
+                `;
+
+                tabela.appendChild(linha);
+            });
+
+            msg.textContent = 'Horários carregados.';
+        }
+
+        async function ocupar(id) {
+            const { error } = await client
+                .from('horarios')
+                .update({ ocupado: true })
+                .eq('id', id);
+
+            if (error) {
+                msg.textContent = 'Erro ao ocupar horário.';
+                return;
+            }
+
+            carregarHorarios();
+        }
+
+        async function libertar(id) {
+            const { error } = await client
+                .from('horarios')
+                .update({ ocupado: false })
+                .eq('id', id);
+
+            if (error) {
+                msg.textContent = 'Erro ao libertar horário.';
+                return;
+            }
+
+            carregarHorarios();
+        }
+
+        async function apagar(id) {
+            const { error } = await client
+                .from('horarios')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                msg.textContent = 'Erro ao apagar horário.';
+                return;
+            }
+
+            carregarHorarios();
+        }
+
+        verificarSessao();
+    </script>
+</body>
+</html>
