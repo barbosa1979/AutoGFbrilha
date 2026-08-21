@@ -14,58 +14,13 @@
         <h1>Auto<span>GF</span> Brilha</h1>
         <h2>Serviço de Limpeza Auto</h2>
 
-        <button id="btnLogin">LOGIN</button>
-        <button id="btnCriarConta">CRIAR CONTA</button>
+        <!-- Botões com navegação direta, sem JS externo -->
+        <button onclick="window.location.href='login.html'">LOGIN</button>
+        <button onclick="window.location.href='criarconta.html'">CRIAR CONTA</button>
 
-        <p id="estado" style="margin-top:20px; font-size:14px; color:#666;"></p>
+        <p style="margin-top:20px; font-size:14px; color:#666;">
+            Bem-vindo ao AutoGF Brilha.
+        </p>
     </div>
-
-    <!-- VERSÃO CORRETA DO SUPABASE PARA GITHUB PAGES -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
-
-    <script>
-        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
-
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        const estadoEl = document.getElementById('estado');
-        const btnLogin = document.getElementById('btnLogin');
-        const btnCriarConta = document.getElementById('btnCriarConta');
-
-        // BOTÕES FUNCIONAIS
-        btnLogin.addEventListener('click', () => {
-            window.location.href = 'login.html';
-        });
-
-        btnCriarConta.addEventListener('click', () => {
-            window.location.href = 'criarconta.html';
-        });
-
-        // VERIFICAR SESSÃO SEM BLOQUEAR O SCRIPT
-        async function verificarSessao() {
-            estadoEl.textContent = 'A verificar sessão...';
-
-            const { data, error } = await client.auth.getUser();
-
-            if (error || !data || !data.user) {
-                estadoEl.textContent = 'Não autenticado.';
-                return;
-            }
-
-            const user = data.user;
-            estadoEl.textContent = `Autenticado como: ${user.email}`;
-
-            if (user.email === 'admin@admin.com') {
-                estadoEl.textContent += ' (admin) — a redirecionar...';
-                setTimeout(() => window.location.href = 'admin.html', 800);
-            } else {
-                estadoEl.textContent += ' — a redirecionar...';
-                setTimeout(() => window.location.href = 'home.html', 800);
-            }
-        }
-
-        verificarSessao();
-    </script>
 </body>
 </html>
