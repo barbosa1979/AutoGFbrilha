@@ -3,27 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horários Admin - AutoGF Brilha</title>
+    <title>Gestão de Horários - Admin</title>
 
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/horariosadmin.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            width: 100%;
+            padding: 20px;
+            background-color: #004aad;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .logout {
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .logout:hover {
+            background-color: #d93636;
+        }
+
+        /* CONTAINER */
+        .container {
+            background-color: #fff;
+            margin-top: 40px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+
+        .container h2 {
+            color: #004aad;
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #004aad;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        button:hover {
+            background-color: #003a8c;
+        }
+
+        /* TABELA */
+        table {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #004aad;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .ocupado {
+            background-color: #ff4d4d;
+            color: white;
+        }
+
+        .livre {
+            background-color: #00a82d;
+            color: white;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+                padding: 25px;
+                margin-top: 20px;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container">
+    <div class="header">
         <h1>Gestão de Horários</h1>
+        <button id="btnLogout" class="logout">Logout</button>
+    </div>
 
-        <div class="form">
-            <label>Dia:</label>
-            <input type="date" id="dia">
+    <div class="container">
+        <h2>Adicionar Horário</h2>
 
-            <label>Hora:</label>
-            <input type="time" id="hora">
+        <input type="date" id="dia">
+        <input type="time" id="hora">
 
-            <button id="btnAdicionar">Adicionar Horário</button>
-        </div>
+        <button id="btnAdd">Adicionar Horário</button>
 
-        <table id="tabelaHorarios">
+        <p id="msg"></p>
+
+        <table>
             <thead>
                 <tr>
                     <th>ID</th>
@@ -33,161 +168,118 @@
                     <th>Ações</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody id="tabelaHorarios"></tbody>
         </table>
-
-        <button id="btnVoltar" style="margin-top:20px;">Voltar ao Painel</button>
-        <button id="btnLogout" style="background-color:#c62828; margin-top:10px;">Logout</button>
-
-        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
     </div>
 
-    <!-- Supabase UMD (versão correta para GitHub Pages) -->
+    <!-- Supabase UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
-
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const tabela = document.querySelector('#tabelaHorarios tbody');
         const msg = document.getElementById('msg');
+        const tabela = document.getElementById('tabelaHorarios');
 
-        document.getElementById('btnVoltar').addEventListener('click', () => {
-            window.location.href = 'homeadmin.html';
-        });
-
-        document.getElementById('btnLogout').addEventListener('click', async () => {
+        document.getElementById('btnLogout').onclick = async () => {
             await client.auth.signOut();
             window.location.href = 'indexadmin.html';
-        });
-
-        document.getElementById('btnAdicionar').addEventListener('click', async () => {
-            const dia = document.getElementById('dia').value;
-            const hora = document.getElementById('hora').value;
-
-            if (!dia || !hora) {
-                msg.textContent = 'Preencha dia e hora.';
-                return;
-            }
-
-            const { error } = await client
-                .from('horarios')
-                .insert({
-                    dia: dia,
-                    hora: hora,
-                    ocupado: false
-                });
-
-            if (error) {
-                msg.textContent = 'Erro ao adicionar horário.';
-                return;
-            }
-
-            msg.textContent = 'Horário adicionado!';
-            carregarHorarios();
-        });
+        };
 
         async function verificarSessao() {
             const { data, error } = await client.auth.getUser();
-
             if (error || !data || !data.user) {
-                msg.textContent = 'Não autenticado — a redirecionar...';
-                setTimeout(() => window.location.href = 'indexadmin.html', 800);
+                window.location.href = 'indexadmin.html';
                 return;
             }
 
-            if (data.user.email !== 'admin@admin.com') {
-                msg.textContent = 'Acesso negado — não é administrador.';
+            const email = data.user.email;
+
+            const { data: userData } = await client
+                .from('utilizadores')
+                .select('tipo')
+                .eq('email', email)
+                .single();
+
+            if (!userData || userData.tipo !== 'admin') {
                 await client.auth.signOut();
-                setTimeout(() => window.location.href = 'indexadmin.html', 800);
-                return;
+                window.location.href = 'indexadmin.html';
             }
-
-            carregarHorarios();
         }
 
-        async function carregarHorarios() {
-            msg.textContent = 'A carregar horários...';
+        verificarSessao();
 
+        async function carregarHorarios() {
             const { data, error } = await client
                 .from('horarios')
                 .select('*')
                 .order('dia', { ascending: true })
                 .order('hora', { ascending: true });
 
-            if (error) {
-                msg.textContent = 'Erro ao carregar horários.';
-                return;
-            }
-
-            tabela.innerHTML = '';
+            tabela.innerHTML = "";
 
             data.forEach(h => {
-                const linha = document.createElement('tr');
-
-                linha.innerHTML = `
-                    <td>${h.id}</td>
-                    <td>${h.dia}</td>
-                    <td>${h.hora}</td>
-                    <td>${h.ocupado ? 'Sim' : 'Não'}</td>
-                    <td>
-                        <button onclick="ocupar(${h.id})">Ocupar</button>
-                        <button onclick="libertar(${h.id})" style="background-color:#43a047;">Libertar</button>
-                        <button onclick="apagar(${h.id})" style="background-color:#e53935;">Apagar</button>
-                    </td>
+                tabela.innerHTML += `
+                    <tr>
+                        <td>${h.id}</td>
+                        <td>${h.dia}</td>
+                        <td>${h.hora}</td>
+                        <td>${h.ocupado ? "Sim" : "Não"}</td>
+                        <td>
+                            <button class="btn-small ${h.ocupado ? "livre" : "ocupado"}"
+                                onclick="toggleOcupado(${h.id}, ${h.ocupado})">
+                                ${h.ocupado ? "Marcar Livre" : "Marcar Ocupado"}
+                            </button>
+                            <button class="btn-small ocupado" onclick="eliminar(${h.id})">Eliminar</button>
+                        </td>
+                    </tr>
                 `;
-
-                tabela.appendChild(linha);
             });
-
-            msg.textContent = 'Horários carregados.';
         }
 
-        async function ocupar(id) {
-            const { error } = await client
-                .from('horarios')
-                .update({ ocupado: true })
-                .eq('id', id);
+        carregarHorarios();
 
-            if (error) {
-                msg.textContent = 'Erro ao ocupar horário.';
+        document.getElementById('btnAdd').onclick = async () => {
+            const dia = document.getElementById('dia').value;
+            const hora = document.getElementById('hora').value;
+
+            if (!dia || !hora) {
+                msg.textContent = "Preencha todos os campos.";
                 return;
             }
+
+            const { error } = await client
+                .from('horarios')
+                .insert([{ dia, hora, ocupado: false }]);
+
+            if (error) {
+                msg.textContent = "Erro ao adicionar.";
+                return;
+            }
+
+            msg.textContent = "Horário adicionado!";
+            carregarHorarios();
+        };
+
+        async function toggleOcupado(id, estadoAtual) {
+            await client
+                .from('horarios')
+                .update({ ocupado: !estadoAtual })
+                .eq('id', id);
 
             carregarHorarios();
         }
 
-        async function libertar(id) {
-            const { error } = await client
-                .from('horarios')
-                .update({ ocupado: false })
-                .eq('id', id);
-
-            if (error) {
-                msg.textContent = 'Erro ao libertar horário.';
-                return;
-            }
-
-            carregarHorarios();
-        }
-
-        async function apagar(id) {
-            const { error } = await client
+        async function eliminar(id) {
+            await client
                 .from('horarios')
                 .delete()
                 .eq('id', id);
 
-            if (error) {
-                msg.textContent = 'Erro ao apagar horário.';
-                return;
-            }
-
             carregarHorarios();
         }
-
-        verificarSessao();
     </script>
 </body>
 </html>
