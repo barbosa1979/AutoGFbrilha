@@ -73,12 +73,13 @@
         /* INPUTS IGUAIS AOS BOTÕES */
         input {
             width: 100%;
-            padding: 12px 0; /* igual aos botões */
+            padding: 12px 0;
             margin-bottom: 15px;
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 1rem;
-            text-align: center; /* fica visualmente igual */
+            text-align: center;
+            box-sizing: border-box;
         }
 
         button {
@@ -137,7 +138,6 @@
 
         /* RESPONSIVIDADE */
         @media (max-width: 600px) {
-
             .header {
                 flex-direction: column;
                 gap: 10px;
@@ -247,6 +247,12 @@
 
             tabela.innerHTML = "";
 
+            if (error) {
+                msg.textContent = "Erro ao carregar horários: " + error.message;
+                console.error(error);
+                return;
+            }
+
             data.forEach(h => {
                 tabela.innerHTML += `
                     <tr>
@@ -282,31 +288,16 @@
                 .insert([{ dia, hora, ocupado: false }]);
 
             if (error) {
-                msg.textContent = "Erro ao adicionar.";
+                msg.textContent = "Erro ao adicionar: " + error.message;
+                console.error(error);
                 return;
             }
 
-            msg.textContent = "Horário adicionado!";
+            msg.textContent = "Horário adicionado com sucesso!";
             carregarHorarios();
         };
 
         async function toggleOcupado(id, estadoAtual) {
-            await client
+            const { error } = await client
                 .from('horarios')
-                .update({ ocupado: !estadoAtual })
-                .eq('id', id);
-
-            carregarHorarios();
-        }
-
-        async function eliminar(id) {
-            await client
-                .from('horarios')
-                .delete()
-                .eq('id', id);
-
-            carregarHorarios();
-        }
-    </script>
-</body>
-</html>
+                .update
