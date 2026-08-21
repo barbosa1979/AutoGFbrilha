@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* HEADER */
         .header {
             width: 100%;
             padding: 20px;
@@ -26,12 +25,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-sizing: border-box;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 1.8rem;
         }
 
         .logout {
@@ -44,29 +37,16 @@
             cursor: pointer;
         }
 
-        .logout:hover {
-            background-color: #d93636;
-        }
-
-        /* CONTAINER */
         .container {
             background-color: #fff;
             margin-top: 40px;
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
             width: 95%;
             max-width: 900px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
-        .container h2 {
-            color: #004aad;
-            font-size: 1.3rem;
-            margin-bottom: 25px;
-        }
-
-        /* TABELA */
         table {
             width: 100%;
             margin-top: 25px;
@@ -76,7 +56,6 @@
         th, td {
             padding: 10px;
             border-bottom: 1px solid #ddd;
-            font-size: 0.9rem;
             text-align: center;
         }
 
@@ -94,38 +73,14 @@
             margin: 2px;
         }
 
-        .confirmar {
-            background-color: #00a82d;
-            color: white;
-        }
+        .confirmar { background-color: #00a82d; color: white; }
+        .cancelar { background-color: #ff9800; color: white; }
+        .eliminar { background-color: #ff4d4d; color: white; }
 
-        .cancelar {
-            background-color: #ff9800;
-            color: white;
-        }
-
-        .eliminar {
-            background-color: #ff4d4d;
-            color: white;
-        }
-
-        /* RESPONSIVIDADE */
-        @media (max-width: 600px) {
-            .container {
-                width: 100%;
-                padding: 20px;
-                margin-top: 10px;
-                box-shadow: none;
-                border-radius: 0;
-            }
-
-            table {
-                font-size: 0.75rem;
-            }
-
-            th, td {
-                padding: 6px;
-            }
+        #msg {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #ff4d4d;
         }
     </style>
 </head>
@@ -158,16 +113,16 @@
         </table>
     </div>
 
-    <!-- Supabase UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
-        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const client = supabase.createClient(
+            "https://kciuazncizxggwcausbs.supabase.co",
+            "sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt"
+        );
 
-        const msg = document.getElementById('msg');
         const tabela = document.getElementById('tabelaAgendamentos');
+        const msg = document.getElementById('msg');
 
         document.getElementById('btnLogout').onclick = async () => {
             await client.auth.signOut();
@@ -175,8 +130,8 @@
         };
 
         async function verificarSessao() {
-            const { data, error } = await client.auth.getUser();
-            if (error || !data || !data.user) {
+            const { data } = await client.auth.getUser();
+            if (!data || !data.user) {
                 window.location.href = 'indexadmin.html';
                 return;
             }
@@ -200,9 +155,24 @@
         async function carregarAgendamentos() {
             const { data, error } = await client
                 .from('agendamentos')
-                .select('*')
-                .order('dia', { ascending: true })
-                .order('hora', { ascending: true });
+                .select(`
+                    id,
+                    confirmado,
+                    utilizadores (
+                        nome,
+                        email,
+                        telemovel
+                    ),
+                    horarios (
+                        dia,
+                        hora
+                    )
+                `);
+
+            if (error) {
+                msg.textContent = "Erro ao carregar agendamentos: " + error.message;
+                return;
+            }
 
             tabela.innerHTML = "";
 
@@ -210,11 +180,11 @@
                 tabela.innerHTML += `
                     <tr>
                         <td>${a.id}</td>
-                        <td>${a.nome}</td>
-                        <td>${a.email}</td>
-                        <td>${a.telemovel}</td>
-                        <td>${a.dia}</td>
-                        <td>${a.hora}</td>
+                        <td>${a.utilizadores.nome}</td>
+                        <td>${a.utilizadores.email}</td>
+                        <td>${a.utilizadores.telemovel}</td>
+                        <td>${a.horarios.dia}</td>
+                        <td>${a.horarios.hora}</td>
                         <td>${a.confirmado ? "Sim" : "Não"}</td>
                         <td>
                             <button class="btn-small confirmar" onclick="confirmar(${a.id})">Confirmar</button>
@@ -229,29 +199,17 @@
         carregarAgendamentos();
 
         async function confirmar(id) {
-            await client
-                .from('agendamentos')
-                .update({ confirmado: true })
-                .eq('id', id);
-
+            await client.from('agendamentos').update({ confirmado: true }).eq('id', id);
             carregarAgendamentos();
         }
 
         async function cancelar(id) {
-            await client
-                .from('agendamentos')
-                .update({ confirmado: false })
-                .eq('id', id);
-
+            await client.from('agendamentos').update({ confirmado: false }).eq('id', id);
             carregarAgendamentos();
         }
 
         async function eliminar(id) {
-            await client
-                .from('agendamentos')
-                .delete()
-                .eq('id', id);
-
+            await client.from('agendamentos').delete().eq('id', id);
             carregarAgendamentos();
         }
     </script>
