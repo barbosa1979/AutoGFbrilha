@@ -300,4 +300,32 @@
         async function toggleOcupado(id, estadoAtual) {
             const { error } = await client
                 .from('horarios')
-                .update
+                .update({ ocupado: !estadoAtual })
+                .eq('id', id);
+
+            if (error) {
+                msg.textContent = "Erro ao atualizar: " + error.message;
+                console.error(error);
+                return;
+            }
+
+            carregarHorarios();
+        }
+
+        async function eliminar(id) {
+            const { error } = await client
+                .from('horarios')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                msg.textContent = "Erro ao eliminar: " + error.message;
+                console.error(error);
+                return;
+            }
+
+            carregarHorarios();
+        }
+    </script>
+</body>
+</html>
