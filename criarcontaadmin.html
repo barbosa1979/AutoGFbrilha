@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Conta Admin - AutoGF Brilha</title>
+    <title>Criar Conta - AutoGF Brilha</title>
 
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/criarcontaadmin.css">
+    <link rel="stylesheet" href="css/criarconta.css">
 </head>
 
 <body>
     <div class="container">
         <h1>Auto<span style="color:red;">GF</span> Brilha</h1>
-        <h2>Criar Conta Administrativa</h2>
+        <h2>Criar Conta</h2>
 
         <input type="email" id="email" placeholder="email">
         <input type="password" id="password" placeholder="Password">
@@ -25,7 +25,7 @@
         <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
     </div>
 
-    <!-- VERSÃO CORRETA DO SUPABASE PARA GITHUB PAGES -->
+    <!-- Supabase UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
@@ -39,7 +39,7 @@
         const btnVoltar = document.getElementById('btnVoltar');
 
         btnVoltar.addEventListener('click', () => {
-            window.location.href = 'indexadmin.html';
+            window.location.href = 'index.html';
         });
 
         btnCriarConta.addEventListener('click', async () => {
@@ -55,7 +55,19 @@
                 return;
             }
 
-            // Criar utilizador no Supabase Auth
+            // Verificar email duplicado
+            const { data: existente } = await client
+                .from('utilizadores')
+                .select('email')
+                .eq('email', email)
+                .single();
+
+            if (existente) {
+                msg.textContent = 'Este email já está registado.';
+                return;
+            }
+
+            // Criar utilizador no Auth
             const { data, error } = await client.auth.signUp({
                 email: email,
                 password: password
@@ -76,7 +88,7 @@
                     email: email,
                     nome: nome,
                     telemovel: telemovel,
-                    tipo: 'admin'
+                    tipo: 'cliente'
                 });
 
             if (erroInsert) {
@@ -86,7 +98,7 @@
 
             msg.textContent = 'Conta criada com sucesso! A redirecionar...';
 
-            setTimeout(() => window.location.href = 'homeadmin.html', 800);
+            setTimeout(() => window.location.href = 'home.html', 800);
         });
     </script>
 </body>
