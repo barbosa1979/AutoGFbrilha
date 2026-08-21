@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas - AutoGF Brilha</title>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/consultas.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Os seus agendamentos</h1>
+
+        <div id="listaAgendamentos" style="margin-top:20px;"></div>
+
+        <button onclick="window.location.href='home.html'">Voltar</button>
+        <button id="btnLogout" style="background-color:#c62828;">Logout</button>
+
+        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const lista = document.getElementById('listaAgendamentos');
+        const msg = document.getElementById('msg');
+        const btnLogout = document.getElementById('btnLogout');
+
+        btnLogout.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        async function carregarAgendamentos() {
+            msg.textContent = 'A carregar agendamentos...';
+
+            const { data: authData, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !authData || !authData.user) {
+                msg.textContent = 'Não autenticado — a redirecionar...';
+                setTimeout(() => window.location.href = 'index.html', 800);
+                return;
+            }
+
+            const user = authData.user;
+
+            const { data: dadosUser } = await supabase
+                .from('utilizadores')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            const isAdmin = dadosUser.tipo === 'admin';
+
+            let query = supabase
+                .from('agendamentos')
+                .select('*')
+                .order('dia', { ascending: true })
+                .order('hora', { ascending: true });
+
+            if (!isAdmin) {
+                query = query.eq('utilizador_id', user.id);
+            }
+
+            const { data: agendamentos, error } = await query;
+
+            if (error) {
+                msg.textContent = 'Erro ao carregar agendamentos.';
+                return;
+            }
+
+            msg.textContent = '';
+
+            if (agendamentos.length === 0) {
+                lista.innerHTML = '<p>Sem agendamentos.</p>';
+                return;
+            }
+
+            lista.innerHTML = '';
+
+            agendamentos.forEach(a => {
+                const div = document.createElement('div');
+                div.style.border = '1px solid #ccc';
+                div.style.padding = '10px';
+                div.style.marginBottom = '10px';
+                div.style.borderRadius = '8px';
+                div.style.textAlign = 'left';
+
+                div.innerHTML = `
+                    <strong>Dia:</strong> ${a.dia}<br>
+                    <strong>Hora:</strong> ${a.hora}<br>
+                    <strong>Ocupado:</strong> ${a.ocupado ? 'Sim' : 'Não'}<br>
+                    <strong>Confirmado:</strong> ${a.confirmado ? 'Sim' : 'Não'}<br>
+                `;
+
+                lista.appendChild(div);
+            });
+        }
+
+        carregarAgendamentos();
+    </script>
+</body>
+</html>

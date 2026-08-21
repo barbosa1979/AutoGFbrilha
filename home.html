@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - AutoGF Brilha</title>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/home.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1 id="titulo">Bem-vindo</h1>
+        <h2 id="subtitulo">Carregando...</h2>
+
+        <button id="btnConsultas">Ver Agendamentos</button>
+        <button id="btnAgendar">Marcar Horário</button>
+        <button id="btnLogout" style="background-color:#c62828;">Logout</button>
+
+        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const titulo = document.getElementById('titulo');
+        const subtitulo = document.getElementById('subtitulo');
+        const msg = document.getElementById('msg');
+
+        const btnConsultas = document.getElementById('btnConsultas');
+        const btnAgendar = document.getElementById('btnAgendar');
+        const btnLogout = document.getElementById('btnLogout');
+
+        btnConsultas.addEventListener('click', () => window.location.href = 'consultas.html');
+        btnAgendar.addEventListener('click', () => window.location.href = 'agendamento.html');
+        btnLogout.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        async function carregarUtilizador() {
+            msg.textContent = 'A verificar sessão...';
+
+            const { data, error } = await supabase.auth.getUser();
+
+            if (error || !data || !data.user) {
+                msg.textContent = 'Não autenticado — a redirecionar...';
+                setTimeout(() => window.location.href = 'index.html', 800);
+                return;
+            }
+
+            const user = data.user;
+
+            const { data: dadosUser, error: erroDados } = await supabase
+                .from('utilizadores')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (erroDados) {
+                msg.textContent = 'Erro ao carregar dados.';
+                return;
+            }
+
+            titulo.textContent = `Bem-vindo, ${dadosUser.nome}`;
+            subtitulo.textContent = `Tipo de conta: ${dadosUser.tipo}`;
+
+            msg.textContent = 'Sessão carregada com sucesso.';
+
+            if (user.email === 'admin@admin.com') {
+                msg.textContent = 'Conta admin — a redirecionar para painel...';
+                setTimeout(() => window.location.href = 'admin.html', 800);
+            }
+        }
+
+        carregarUtilizador();
+    </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar - AutoGF Brilha</title>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/agendamento.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Marcar Horário</h1>
+
+        <input type="date" id="dia">
+        <input type="time" id="hora">
+
+        <button id="btnAgendar">Confirmar</button>
+        <button onclick="window.location.href='home.html'">Voltar</button>
+        <button id="btnLogout" style="background-color:#c62828;">Logout</button>
+
+        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const msg = document.getElementById('msg');
+        const btnAgendar = document.getElementById('btnAgendar');
+        const btnLogout = document.getElementById('btnLogout');
+
+        let utilizadorID = null;
+
+        btnLogout.addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        async function verificarSessao() {
+            msg.textContent = 'A verificar sessão...';
+
+            const { data, error } = await supabase.auth.getUser();
+
+            if (error || !data || !data.user) {
+                msg.textContent = 'Não autenticado — a redirecionar...';
+                setTimeout(() => window.location.href = 'index.html', 800);
+                return;
+            }
+
+            utilizadorID = data.user.id;
+            msg.textContent = '';
+        }
+
+        verificarSessao();
+
+        btnAgendar.addEventListener('click', async () => {
+            msg.textContent = 'A validar horário...';
+
+            const dia = document.getElementById('dia').value;
+            const hora = document.getElementById('hora').value;
+
+            if (!dia || !hora) {
+                msg.textContent = 'Preencha dia e hora.';
+                return;
+            }
+
+            const { data: horario } = await supabase
+                .from('horarios')
+                .select('*')
+                .eq('dia', dia)
+                .eq('hora', hora)
+                .single();
+
+            if (!horario) {
+                msg.textContent = 'Este horário não existe no sistema.';
+                return;
+            }
+
+            if (horario.ocupado) {
+                msg.textContent = 'Este horário já está ocupado.';
+                return;
+            }
+
+            msg.textContent = 'Horário livre — a criar agendamento...';
+
+            const { error: erroAgendamento } = await supabase
+                .from('agendamentos')
+                .insert({
+                    dia: dia,
+                    hora: hora,
+                    ocupado: true,
+                    confirmado: false,
+                    utilizador_id: utilizadorID
+                });
+
+            if (erroAgendamento) {
+                msg.textContent = 'Erro ao criar agendamento.';
+                return;
+            }
+
+            const { error: erroUpdate } = await supabase
+                .from('horarios')
+                .update({ ocupado: true })
+                .eq('id', horario.id);
+
+            if (erroUpdate) {
+                msg.textContent = 'Agendamento criado, mas falhou ao atualizar horário.';
+                return;
+            }
+
+            msg.textContent = 'Agendamento criado com sucesso! A redirecionar...';
+
+            setTimeout(() => window.location.href = 'consultas.html', 1000);
+        });
+    </script>
+</body>
+</html>
