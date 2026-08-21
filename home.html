@@ -21,13 +21,14 @@
         <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- VERSÃO CORRETA DO SUPABASE PARA GITHUB PAGES -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const titulo = document.getElementById('titulo');
         const subtitulo = document.getElementById('subtitulo');
@@ -39,15 +40,16 @@
 
         btnConsultas.addEventListener('click', () => window.location.href = 'consultas.html');
         btnAgendar.addEventListener('click', () => window.location.href = 'agendamento.html');
+
         btnLogout.addEventListener('click', async () => {
-            await supabase.auth.signOut();
+            await client.auth.signOut();
             window.location.href = 'index.html';
         });
 
         async function carregarUtilizador() {
             msg.textContent = 'A verificar sessão...';
 
-            const { data, error } = await supabase.auth.getUser();
+            const { data, error } = await client.auth.getUser();
 
             if (error || !data || !data.user) {
                 msg.textContent = 'Não autenticado — a redirecionar...';
@@ -57,7 +59,7 @@
 
             const user = data.user;
 
-            const { data: dadosUser, error: erroDados } = await supabase
+            const { data: dadosUser, error: erroDados } = await client
                 .from('utilizadores')
                 .select('*')
                 .eq('id', user.id)
