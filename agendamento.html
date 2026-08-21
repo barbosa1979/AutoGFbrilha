@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* HEADER */
         .header {
             width: 100%;
             padding: 20px;
@@ -34,7 +33,6 @@
             font-size: 1.8rem;
         }
 
-        /* BOTÃO LOGOUT */
         .logout {
             background-color: #ff4d4d;
             color: #fff;
@@ -52,7 +50,6 @@
             background-color: #d93636;
         }
 
-        /* CONTAINER */
         .container {
             background-color: #fff;
             margin-top: 60px;
@@ -70,7 +67,7 @@
             margin-bottom: 25px;
         }
 
-        select, input {
+        select {
             width: 100%;
             padding: 12px 0;
             margin-bottom: 15px;
@@ -148,7 +145,6 @@
         <p id="msg"></p>
     </div>
 
-    <!-- Supabase UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
@@ -220,10 +216,26 @@
                 return;
             }
 
-            // Inserir agendamento
+            // Buscar o ID do horário selecionado
+            const { data: horarioData, error: horarioError } = await client
+                .from('horarios')
+                .select('id')
+                .eq('dia', dia)
+                .eq('hora', hora)
+                .single();
+
+            if (horarioError || !horarioData) {
+                msg.textContent = "Erro ao localizar horário.";
+                console.error(horarioError);
+                return;
+            }
+
+            const horario_id = horarioData.id;
+
+            // Inserir agendamento com horario_id
             const { error } = await client
                 .from('agendamentos')
-                .insert([{ dia, hora, confirmado: false, estado: 'pendente', marca: '', modelo: '', tipo_lavagem: '', utilizador_id: userData.user.id }]);
+                .insert([{ horario_id, confirmado: false, estado: 'pendente', marca: '', modelo: '', tipo_lavagem: '', utilizador_id: userData.user.id }]);
 
             if (error) {
                 msg.textContent = "Erro ao agendar: " + error.message;
@@ -235,8 +247,7 @@
             await client
                 .from('horarios')
                 .update({ ocupado: true })
-                .eq('dia', dia)
-                .eq('hora', hora);
+                .eq('id', horario_id);
 
             msg.style.color = "#00a82d";
             msg.textContent = "Agendamento confirmado com sucesso!";
