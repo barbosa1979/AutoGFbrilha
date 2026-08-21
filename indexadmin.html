@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin - AutoGF Brilha</title>
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/indexadmin.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Auto<span style="color:red;">GF</span> Brilha</h1>
+        <h2>Painel Administrativo</h2>
+
+        <input type="email" id="email" placeholder="email">
+        <input type="password" id="password" placeholder="Password">
+
+        <button id="btnLogin">LOGIN</button>
+        <button id="btnCriarConta">CRIAR CONTA</button>
+
+        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    </div>
+
+    <!-- VERSÃO CORRETA DO SUPABASE PARA GITHUB PAGES -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+
+    <script>
+        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
+
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const msg = document.getElementById('msg');
+        const btnLogin = document.getElementById('btnLogin');
+        const btnCriarConta = document.getElementById('btnCriarConta');
+
+        btnCriarConta.addEventListener('click', () => {
+            window.location.href = 'criarcontaadmin.html';
+        });
+
+        btnLogin.addEventListener('click', async () => {
+            msg.textContent = 'A autenticar...';
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!email || !password) {
+                msg.textContent = 'Preencha todos os campos.';
+                return;
+            }
+
+            const { data, error } = await client.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                msg.textContent = 'Erro: ' + error.message;
+                return;
+            }
+
+            // Verificar se é admin
+            if (email !== 'admin@admin.com') {
+                msg.textContent = 'Acesso negado — não é administrador.';
+                await client.auth.signOut();
+                return;
+            }
+
+            msg.textContent = 'Login efetuado com sucesso!';
+            setTimeout(() => window.location.href = 'homeadmin.html', 800);
+        });
+    </script>
+</body>
+</html>
