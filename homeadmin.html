@@ -5,8 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Gestão - Admin</title>
 
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/homeadmin.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+
+        .header {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            background-color: #004aad;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .logout {
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .logout:hover {
+            background-color: #d93636;
+        }
+
+        .container {
+            background-color: #fff;
+            margin-top: 40px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+
+        .container h2 {
+            color: #004aad;
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+        }
+
+        .menu button {
+            background-color: #004aad;
+            color: #fff;
+            border: none;
+            padding: 12px 0;
+            width: 100%;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .menu button:hover {
+            background-color: #003a8c;
+        }
+
+        #msg {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 
 <body>
@@ -23,7 +102,7 @@
             <button onclick="window.location.href='agendamentosadmin.html'">Gerir Agendamentos</button>
         </div>
 
-        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+        <p id="msg"></p>
     </div>
 
     <!-- Supabase UMD -->
@@ -42,7 +121,6 @@
             window.location.href = 'indexadmin.html';
         });
 
-        // Verificação dinâmica do administrador
         async function verificarSessao() {
             const { data, error } = await client.auth.getUser();
 
