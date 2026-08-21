@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendar Lavagem - Cliente</title>
+    <title>Agendar Lavagem</title>
 
     <style>
         body {
@@ -34,14 +34,18 @@
             font-size: 1.8rem;
         }
 
+        /* BOTÃO LOGOUT */
         .logout {
             background-color: #ff4d4d;
             color: #fff;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 0;
+            width: 140px;
             border-radius: 6px;
             font-size: 1rem;
             cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
         }
 
         .logout:hover {
@@ -51,12 +55,13 @@
         /* CONTAINER */
         .container {
             background-color: #fff;
-            margin-top: 40px;
+            margin-top: 60px;
             padding: 40px;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
-            width: 350px;
+            width: 90%;
+            max-width: 500px;
         }
 
         .container h2 {
@@ -67,18 +72,20 @@
 
         select, input {
             width: 100%;
-            padding: 12px;
+            padding: 12px 0;
             margin-bottom: 15px;
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 1rem;
+            text-align: center;
+            box-sizing: border-box;
         }
 
         button {
             background-color: #004aad;
             color: #fff;
             border: none;
-            padding: 12px;
+            padding: 12px 0;
             width: 100%;
             border-radius: 6px;
             font-size: 1rem;
@@ -91,12 +98,11 @@
         }
 
         #msg {
-            font-size: 0.9rem;
-            color: #555;
+            color: #ff4d4d;
+            font-weight: 500;
             margin-top: 10px;
         }
 
-        /* RESPONSIVIDADE */
         @media (max-width: 600px) {
             .header {
                 flex-direction: column;
@@ -109,22 +115,17 @@
             }
 
             .logout {
-                width: 100%;
-                padding: 12px;
-                font-size: 1.1rem;
+                width: 140px;
+                padding: 12px 0;
+                font-size: 1rem;
             }
 
             .container {
-                width: 90%;
+                width: 95%;
                 padding: 25px;
                 margin-top: 20px;
                 box-shadow: none;
                 border-radius: 0;
-            }
-
-            button {
-                font-size: 1rem;
-                padding: 14px;
             }
         }
     </style>
@@ -139,15 +140,10 @@
     <div class="container">
         <h2>Escolher Horário</h2>
 
-        <select id="dia">
-            <option value="">Selecione o dia</option>
-        </select>
+        <select id="dia"></select>
+        <select id="hora"></select>
 
-        <select id="hora">
-            <option value="">Selecione a hora</option>
-        </select>
-
-        <button id="btnAgendar">Confirmar Agendamento</button>
+        <button id="btnConfirmar">Confirmar Agendamento</button>
 
         <p id="msg"></p>
     </div>
@@ -171,22 +167,7 @@
 
         async function verificarSessao() {
             const { data, error } = await client.auth.getUser();
-
             if (error || !data || !data.user) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const email = data.user.email;
-
-            const { data: userData } = await client
-                .from('utilizadores')
-                .select('tipo')
-                .eq('email', email)
-                .single();
-
-            if (!userData || userData.tipo !== 'cliente') {
-                await client.auth.signOut();
                 window.location.href = 'index.html';
                 return;
             }
@@ -194,38 +175,35 @@
 
         verificarSessao();
 
-        async function carregarDias() {
-            const { data } = await client
-                .from('horarios')
-                .select('dia')
-                .eq('ocupado', false)
-                .order('dia', { ascending: true });
-
-            const diasUnicos = [...new Set(data.map(h => h.dia))];
-
-            diasUnicos.forEach(d => {
-                diaSelect.innerHTML += `<option value="${d}">${d}</option>`;
-            });
-        }
-
-        carregarDias();
-
-        diaSelect.onchange = async () => {
-            horaSelect.innerHTML = `<option value="">Selecione a hora</option>`;
-
-            const { data } = await client
+        async function carregarHorarios() {
+            const { data, error } = await client
                 .from('horarios')
                 .select('*')
-                .eq('dia', diaSelect.value)
                 .eq('ocupado', false)
+                .order('dia', { ascending: true })
                 .order('hora', { ascending: true });
 
-            data.forEach(h => {
-                horaSelect.innerHTML += `<option value="${h.hora}">${h.hora}</option>`;
-            });
-        };
+            if (error) {
+                msg.textContent = "Erro ao carregar horários: " + error.message;
+                console.error(error);
+                return;
+            }
 
-        document.getElementById('btnAgendar').onclick = async () => {
+            const diasUnicos = [...new Set(data.map(h => h.dia))];
+            diaSelect.innerHTML = diasUnicos.map(d => `<option value="${d}">${d}</option>`).join('');
+
+            atualizarHoras(diasUnicos[0], data);
+            diaSelect.onchange = () => atualizarHoras(diaSelect.value, data);
+        }
+
+        function atualizarHoras(diaSelecionado, horarios) {
+            const horas = horarios.filter(h => h.dia === diaSelecionado).map(h => h.hora);
+            horaSelect.innerHTML = horas.map(h => `<option value="${h}">${h}</option>`).join('');
+        }
+
+        carregarHorarios();
+
+        document.getElementById('btnConfirmar').onclick = async () => {
             const dia = diaSelect.value;
             const hora = horaSelect.value;
 
@@ -234,25 +212,34 @@
                 return;
             }
 
-            const { data: user } = await client.auth.getUser();
+            const { data: userData } = await client.auth.getUser();
+            const email = userData?.user?.email;
 
-            const { error } = await client
-                .from('agendamentos')
-                .insert([{
-                    email: user.user.email,
-                    nome: user.user.email.split("@")[0],
-                    telemovel: "000000000",
-                    dia,
-                    hora,
-                    confirmado: false
-                }]);
-
-            if (error) {
-                msg.textContent = "Erro ao agendar.";
+            if (!email) {
+                msg.textContent = "Sessão expirada. Faça login novamente.";
                 return;
             }
 
-            msg.textContent = "Agendamento criado com sucesso!";
+            // Inserir agendamento
+            const { error } = await client
+                .from('agendamentos')
+                .insert([{ dia, hora, confirmado: false, estado: 'pendente', marca: '', modelo: '', tipo_lavagem: '', utilizador_id: userData.user.id }]);
+
+            if (error) {
+                msg.textContent = "Erro ao agendar: " + error.message;
+                console.error(error);
+                return;
+            }
+
+            // Atualizar horário para ocupado
+            await client
+                .from('horarios')
+                .update({ ocupado: true })
+                .eq('dia', dia)
+                .eq('hora', hora);
+
+            msg.style.color = "#00a82d";
+            msg.textContent = "Agendamento confirmado com sucesso!";
         };
     </script>
 </body>
