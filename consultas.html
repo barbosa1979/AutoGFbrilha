@@ -3,108 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultas - AutoGF Brilha</title>
+    <title>As Minhas Consultas - Cliente</title>
 
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/consultas.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            width: 100%;
+            padding: 20px;
+            background-color: #004aad;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .logout {
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .logout:hover {
+            background-color: #d93636;
+        }
+
+        /* CONTAINER */
+        .container {
+            background-color: #fff;
+            margin-top: 40px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 95%;
+            max-width: 900px;
+        }
+
+        .container h2 {
+            color: #004aad;
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+        }
+
+        /* TABELA */
+        table {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        th {
+            background-color: #004aad;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            margin: 2px;
+        }
+
+        .cancelar {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .logout {
+                width: 100%;
+                padding: 12px;
+                font-size: 1.1rem;
+            }
+
+            .container {
+                width: 100%;
+                padding: 20px;
+                margin-top: 10px;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            table {
+                font-size: 0.75rem;
+            }
+
+            th, td {
+                padding: 6px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Os seus agendamentos</h1>
-
-        <div id="listaAgendamentos" style="margin-top:20px;"></div>
-
-        <button onclick="window.location.href='home.html'">Voltar</button>
-        <button id="btnLogout" style="background-color:#c62828;">Logout</button>
-
-        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    <div class="header">
+        <h1>As Minhas Consultas</h1>
+        <button id="btnLogout" class="logout">Logout</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="container">
+        <h2>Agendamentos</h2>
+
+        <p id="msg"></p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Dia</th>
+                    <th>Hora</th>
+                    <th>Confirmado</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaConsultas"></tbody>
+        </table>
+    </div>
+
+    <!-- Supabase UMD -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        const lista = document.getElementById('listaAgendamentos');
         const msg = document.getElementById('msg');
-        const btnLogout = document.getElementById('btnLogout');
+        const tabela = document.getElementById('tabelaConsultas');
 
-        btnLogout.addEventListener('click', async () => {
-            await supabase.auth.signOut();
+        document.getElementById('btnLogout').onclick = async () => {
+            await client.auth.signOut();
             window.location.href = 'index.html';
-        });
+        };
 
-        async function carregarAgendamentos() {
-            msg.textContent = 'A carregar agendamentos...';
+        async function verificarSessao() {
+            const { data, error } = await client.auth.getUser();
 
-            const { data: authData, error: authError } = await supabase.auth.getUser();
-
-            if (authError || !authData || !authData.user) {
-                msg.textContent = 'Não autenticado — a redirecionar...';
-                setTimeout(() => window.location.href = 'index.html', 800);
+            if (error || !data || !data.user) {
+                window.location.href = 'index.html';
                 return;
             }
 
-            const user = authData.user;
+            const email = data.user.email;
 
-            const { data: dadosUser } = await supabase
+            const { data: userData } = await client
                 .from('utilizadores')
-                .select('*')
-                .eq('id', user.id)
+                .select('tipo')
+                .eq('email', email)
                 .single();
 
-            const isAdmin = dadosUser.tipo === 'admin';
+            if (!userData || userData.tipo !== 'cliente') {
+                await client.auth.signOut();
+                window.location.href = 'index.html';
+                return;
+            }
+        }
 
-            let query = supabase
+        verificarSessao();
+
+        async function carregarConsultas() {
+            const { data: user } = await client.auth.getUser();
+
+            const { data, error } = await client
                 .from('agendamentos')
                 .select('*')
+                .eq('email', user.user.email)
                 .order('dia', { ascending: true })
                 .order('hora', { ascending: true });
 
-            if (!isAdmin) {
-                query = query.eq('utilizador_id', user.id);
-            }
+            tabela.innerHTML = "";
 
-            const { data: agendamentos, error } = await query;
-
-            if (error) {
-                msg.textContent = 'Erro ao carregar agendamentos.';
-                return;
-            }
-
-            msg.textContent = '';
-
-            if (agendamentos.length === 0) {
-                lista.innerHTML = '<p>Sem agendamentos.</p>';
-                return;
-            }
-
-            lista.innerHTML = '';
-
-            agendamentos.forEach(a => {
-                const div = document.createElement('div');
-                div.style.border = '1px solid #ccc';
-                div.style.padding = '10px';
-                div.style.marginBottom = '10px';
-                div.style.borderRadius = '8px';
-                div.style.textAlign = 'left';
-
-                div.innerHTML = `
-                    <strong>Dia:</strong> ${a.dia}<br>
-                    <strong>Hora:</strong> ${a.hora}<br>
-                    <strong>Ocupado:</strong> ${a.ocupado ? 'Sim' : 'Não'}<br>
-                    <strong>Confirmado:</strong> ${a.confirmado ? 'Sim' : 'Não'}<br>
+            data.forEach(a => {
+                tabela.innerHTML += `
+                    <tr>
+                        <td>${a.id}</td>
+                        <td>${a.dia}</td>
+                        <td>${a.hora}</td>
+                        <td>${a.confirmado ? "Sim" : "Não"}</td>
+                        <td>
+                            <button class="btn-small cancelar" onclick="cancelar(${a.id})">Cancelar</button>
+                        </td>
+                    </tr>
                 `;
-
-                lista.appendChild(div);
             });
         }
 
-        carregarAgendamentos();
+        carregarConsultas();
+
+        async function cancelar(id) {
+            await client
+                .from('agendamentos')
+                .delete()
+                .eq('id', id);
+
+            carregarConsultas();
+        }
     </script>
 </body>
 </html>
