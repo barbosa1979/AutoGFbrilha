@@ -25,19 +25,20 @@
         <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- VERSÃO CORRETA DO SUPABASE PARA GITHUB PAGES -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const msg = document.getElementById('msg');
         const btnCriarConta = document.getElementById('btnCriarConta');
 
         async function verificarSessao() {
-            const { data } = await supabase.auth.getUser();
+            const { data } = await client.auth.getUser();
 
             if (data && data.user) {
                 msg.textContent = 'Já está autenticado, a redirecionar...';
@@ -65,7 +66,7 @@
                 return;
             }
 
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await client.auth.signUp({
                 email: email,
                 password: password
             });
@@ -77,7 +78,7 @@
 
             const user = data.user;
 
-            const { error: erroInsert } = await supabase
+            const { error: erroInsert } = await client
                 .from('utilizadores')
                 .insert({
                     id: user.id,
