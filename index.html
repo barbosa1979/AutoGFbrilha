@@ -20,25 +20,33 @@
         <p id="estado" style="margin-top:20px; font-size:14px; color:#666;"></p>
     </div>
 
+    <!-- VERSÃO CORRETA DO SUPABASE PARA GITHUB PAGES -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const estadoEl = document.getElementById('estado');
         const btnLogin = document.getElementById('btnLogin');
         const btnCriarConta = document.getElementById('btnCriarConta');
 
-        btnLogin.addEventListener('click', () => window.location.href = 'login.html');
-        btnCriarConta.addEventListener('click', () => window.location.href = 'criarconta.html');
+        // BOTÕES FUNCIONAIS
+        btnLogin.addEventListener('click', () => {
+            window.location.href = 'login.html';
+        });
 
+        btnCriarConta.addEventListener('click', () => {
+            window.location.href = 'criarconta.html';
+        });
+
+        // VERIFICAR SESSÃO SEM BLOQUEAR O SCRIPT
         async function verificarSessao() {
             estadoEl.textContent = 'A verificar sessão...';
 
-            const { data, error } = await supabase.auth.getUser();
+            const { data, error } = await client.auth.getUser();
 
             if (error || !data || !data.user) {
                 estadoEl.textContent = 'Não autenticado.';
