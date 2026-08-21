@@ -1,217 +1,33 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Agendamentos - Admin</title>
+async function carregarAgendamentos() {
+    const { data, error } = await client
+        .from('agendamentos')
+        .select('*')
+        .order('dia', { ascending: true })
+        .order('hora', { ascending: true });
 
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: "Segoe UI", Roboto, sans-serif;
-            background-color: #f5f7fa;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+    if (error) {
+        msg.textContent = "Erro ao carregar agendamentos: " + error.message;
+        return;
+    }
 
-        .header {
-            width: 100%;
-            padding: 20px;
-            background-color: #004aad;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    tabela.innerHTML = "";
 
-        .logout {
-            background-color: #ff4d4d;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        .container {
-            background-color: #fff;
-            margin-top: 40px;
-            padding: 40px;
-            border-radius: 12px;
-            width: 95%;
-            max-width: 900px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-
-        table {
-            width: 100%;
-            margin-top: 25px;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            text-align: center;
-        }
-
-        th {
-            background-color: #004aad;
-            color: white;
-        }
-
-        .btn-small {
-            padding: 6px 10px;
-            font-size: 0.8rem;
-            border-radius: 4px;
-            cursor: pointer;
-            border: none;
-            margin: 2px;
-        }
-
-        .confirmar { background-color: #00a82d; color: white; }
-        .cancelar { background-color: #ff9800; color: white; }
-        .eliminar { background-color: #ff4d4d; color: white; }
-
-        #msg {
-            margin-top: 10px;
-            font-weight: bold;
-            color: #ff4d4d;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="header">
-        <h1>Gestão de Agendamentos</h1>
-        <button id="btnLogout" class="logout">Logout</button>
-    </div>
-
-    <div class="container">
-        <h2>Lista de Agendamentos</h2>
-
-        <p id="msg"></p>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Email</th>
-                    <th>Telemóvel</th>
-                    <th>Dia</th>
-                    <th>Hora</th>
-                    <th>Confirmado</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="tabelaAgendamentos"></tbody>
-        </table>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
-
-    <script>
-        const client = supabase.createClient(
-            "https://kciuazncizxggwcausbs.supabase.co",
-            "sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt"
-        );
-
-        const tabela = document.getElementById('tabelaAgendamentos');
-        const msg = document.getElementById('msg');
-
-        document.getElementById('btnLogout').onclick = async () => {
-            await client.auth.signOut();
-            window.location.href = 'indexadmin.html';
-        };
-
-        async function verificarSessao() {
-            const { data } = await client.auth.getUser();
-            if (!data || !data.user) {
-                window.location.href = 'indexadmin.html';
-                return;
-            }
-
-            const email = data.user.email;
-
-            const { data: userData } = await client
-                .from('utilizadores')
-                .select('tipo')
-                .eq('email', email)
-                .single();
-
-            if (!userData || userData.tipo !== 'admin') {
-                await client.auth.signOut();
-                window.location.href = 'indexadmin.html';
-            }
-        }
-
-        verificarSessao();
-
-        async function carregarAgendamentos() {
-            const { data, error } = await client
-                .from('agendamentos')
-                .select(`
-                    id,
-                    confirmado,
-                    utilizadores (
-                        nome,
-                        email,
-                        telemovel
-                    ),
-                    horarios (
-                        dia,
-                        hora
-                    )
-                `);
-
-            if (error) {
-                msg.textContent = "Erro ao carregar agendamentos: " + error.message;
-                return;
-            }
-
-            tabela.innerHTML = "";
-
-            data.forEach(a => {
-                tabela.innerHTML += `
-                    <tr>
-                        <td>${a.id}</td>
-                        <td>${a.utilizadores.nome}</td>
-                        <td>${a.utilizadores.email}</td>
-                        <td>${a.utilizadores.telemovel}</td>
-                        <td>${a.horarios.dia}</td>
-                        <td>${a.horarios.hora}</td>
-                        <td>${a.confirmado ? "Sim" : "Não"}</td>
-                        <td>
-                            <button class="btn-small confirmar" onclick="confirmar(${a.id})">Confirmar</button>
-                            <button class="btn-small cancelar" onclick="cancelar(${a.id})">Cancelar</button>
-                            <button class="btn-small eliminar" onclick="eliminar(${a.id})">Eliminar</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        carregarAgendamentos();
-
-        async function confirmar(id) {
-            await client.from('agendamentos').update({ confirmado: true }).eq('id', id);
-            carregarAgendamentos();
-        }
-
-        async function cancelar(id) {
-            await client.from('agendamentos').update({ confirmado: false }).eq('id', id);
-            carregarAgendamentos();
-        }
-
-        async function eliminar(id) {
-            await client.from('agendamentos').delete().eq('id', id);
-            carregarAgendamentos();
-        }
-    </script>
-</body>
-</html>
+    data.forEach(a => {
+        tabela.innerHTML += `
+            <tr>
+                <td>${a.id}</td>
+                <td>${a.nome}</td>
+                <td>${a.email}</td>
+                <td>${a.telemovel}</td>
+                <td>${a.dia}</td>
+                <td>${a.hora}</td>
+                <td>${a.confirmado ? "Sim" : "Não"}</td>
+                <td>
+                    <button class="btn-small confirmar" onclick="confirmar(${a.id})">Confirmar</button>
+                    <button class="btn-small cancelar" onclick="cancelar(${a.id})">Cancelar</button>
+                    <button class="btn-small eliminar" onclick="eliminar(${a.id})">Eliminar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
