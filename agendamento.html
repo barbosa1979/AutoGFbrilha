@@ -94,6 +94,14 @@
             background-color: #003a8c;
         }
 
+        #btnVoltar {
+            background-color: #00a82d;
+        }
+
+        #btnVoltar:hover {
+            background-color: #008f25;
+        }
+
         #msg {
             color: #ff4d4d;
             font-weight: 500;
@@ -141,6 +149,7 @@
         <select id="hora"></select>
 
         <button id="btnConfirmar">Confirmar Agendamento</button>
+        <button id="btnVoltar">Voltar</button>
 
         <p id="msg"></p>
     </div>
@@ -159,6 +168,10 @@
         document.getElementById('btnLogout').onclick = async () => {
             await client.auth.signOut();
             window.location.href = 'index.html';
+        };
+
+        document.getElementById('btnVoltar').onclick = () => {
+            window.location.href = 'home.html'; // altera se o nome da tua página for diferente
         };
 
         async function verificarSessao() {
@@ -216,7 +229,6 @@
                 return;
             }
 
-            // Buscar o ID do horário selecionado
             const { data: horarioData, error: horarioError } = await client
                 .from('horarios')
                 .select('id')
@@ -232,7 +244,6 @@
 
             const horario_id = horarioData.id;
 
-            // Inserir agendamento com horario_id
             const { error } = await client
                 .from('agendamentos')
                 .insert([{ horario_id, confirmado: false, estado: 'pendente', marca: '', modelo: '', tipo_lavagem: '', utilizador_id: userData.user.id }]);
@@ -243,7 +254,6 @@
                 return;
             }
 
-            // Atualizar horário para ocupado
             await client
                 .from('horarios')
                 .update({ ocupado: true })
