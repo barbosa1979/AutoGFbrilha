@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Conta - AutoGF Brilha</title>
+    <title>Criar Conta Admin - AutoGF Brilha</title>
 
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/criarconta.css">
+    <link rel="stylesheet" href="css/criarcontaadmin.css">
 </head>
 
 <body>
     <div class="container">
         <h1>Auto<span style="color:red;">GF</span> Brilha</h1>
-        <h2>Criar Conta</h2>
+        <h2>Criar Conta Administrativa</h2>
 
         <input type="email" id="email" placeholder="email">
         <input type="password" id="password" placeholder="Password">
@@ -39,7 +39,7 @@
         const btnVoltar = document.getElementById('btnVoltar');
 
         btnVoltar.addEventListener('click', () => {
-            window.location.href = 'index.html';
+            window.location.href = 'indexadmin.html';
         });
 
         btnCriarConta.addEventListener('click', async () => {
@@ -88,7 +88,7 @@
                     email: email,
                     nome: nome,
                     telemovel: telemovel,
-                    tipo: 'cliente'
+                    tipo: 'admin'
                 });
 
             if (erroInsert) {
@@ -96,9 +96,9 @@
                 return;
             }
 
-            msg.textContent = 'Conta criada com sucesso! A redirecionar...';
+            msg.textContent = 'Conta admin criada com sucesso! A redirecionar...';
 
-            setTimeout(() => window.location.href = 'home.html', 800);
+            setTimeout(() => window.location.href = 'homeadmin.html', 800);
         });
     </script>
 </body>
