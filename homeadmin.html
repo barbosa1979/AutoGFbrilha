@@ -3,161 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - AutoGF Brilha</title>
+    <title>Painel de Gestão - Admin</title>
 
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/homeadmin.css">
 </head>
 
 <body>
-    <div class="container">
+    <div class="header">
         <h1>Painel de Gestão</h1>
-        <button id="btnHorarios" style="margin-bottom:20px;">Gerir Horários</button>
+        <button id="btnLogout" class="logout">Logout</button>
+    </div>
 
-        <table id="tabelaAgendamentos">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Dia</th>
-                    <th>Hora</th>
-                    <th>Cliente</th>
-                    <th>Telemóvel</th>
-                    <th>Confirmado</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <div class="container">
+        <h2>Bem-vindo, Administrador</h2>
 
-        <button id="btnLogout" style="background-color:#c62828; margin-top:20px;">Logout</button>
+        <div class="menu">
+            <button onclick="window.location.href='horariosadmin.html'">Gerir Horários</button>
+            <button onclick="window.location.href='agendamentosadmin.html'">Gerir Agendamentos</button>
+        </div>
 
         <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
     </div>
 
-    <!-- Supabase UMD (versão correta para GitHub Pages) -->
+    <!-- Supabase UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
-
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const tabela = document.querySelector('#tabelaAgendamentos tbody');
         const msg = document.getElementById('msg');
+        const btnLogout = document.getElementById('btnLogout');
 
-        document.getElementById('btnLogout').addEventListener('click', async () => {
+        btnLogout.addEventListener('click', async () => {
             await client.auth.signOut();
             window.location.href = 'indexadmin.html';
         });
 
-        document.getElementById('btnHorarios').addEventListener('click', () => {
-            window.location.href = 'horariosadmin.html';
-        });
-
+        // Verificação dinâmica do administrador
         async function verificarSessao() {
             const { data, error } = await client.auth.getUser();
 
             if (error || !data || !data.user) {
-                msg.textContent = 'Não autenticado — a redirecionar...';
-                setTimeout(() => window.location.href = 'indexadmin.html', 800);
+                window.location.href = 'indexadmin.html';
                 return;
             }
 
-            if (data.user.email !== 'admin@admin.com') {
-                msg.textContent = 'Acesso negado — não é administrador.';
+            const email = data.user.email;
+
+            const { data: userData, error: tipoError } = await client
+                .from('utilizadores')
+                .select('tipo')
+                .eq('email', email)
+                .single();
+
+            if (tipoError || !userData || userData.tipo !== 'admin') {
                 await client.auth.signOut();
-                setTimeout(() => window.location.href = 'indexadmin.html', 800);
+                window.location.href = 'indexadmin.html';
                 return;
             }
 
-            carregarAgendamentos();
-        }
-
-        async function carregarAgendamentos() {
-            msg.textContent = 'A carregar agendamentos...';
-
-            const { data, error } = await client
-                .from('agendamentos')
-                .select(`
-                    id,
-                    dia,
-                    hora,
-                    confirmado,
-                    utilizador_id,
-                    utilizadores (nome, telemovel)
-                `);
-
-            if (error) {
-                msg.textContent = 'Erro ao carregar agendamentos.';
-                return;
-            }
-
-            tabela.innerHTML = '';
-
-            data.forEach(ag => {
-                const linha = document.createElement('tr');
-
-                linha.innerHTML = `
-                    <td>${ag.id}</td>
-                    <td>${ag.dia}</td>
-                    <td>${ag.hora}</td>
-                    <td>${ag.utilizadores?.nome || '—'}</td>
-                    <td>${ag.utilizadores?.telemovel || '—'}</td>
-                    <td>${ag.confirmado ? 'Sim' : 'Não'}</td>
-                    <td>
-                        <button onclick="confirmar(${ag.id})">Autorizar</button>
-                        <button onclick="recusar(${ag.id})" style="background-color:#e53935;">Recusar</button>
-                        <button onclick="apagar(${ag.id})" style="background-color:#757575;">Apagar</button>
-                    </td>
-                `;
-
-                tabela.appendChild(linha);
-            });
-
-            msg.textContent = 'Agendamentos carregados.';
-        }
-
-        async function confirmar(id) {
-            const { error } = await client
-                .from('agendamentos')
-                .update({ confirmado: true })
-                .eq('id', id);
-
-            if (error) {
-                msg.textContent = 'Erro ao confirmar.';
-                return;
-            }
-
-            carregarAgendamentos();
-        }
-
-        async function recusar(id) {
-            const { error } = await client
-                .from('agendamentos')
-                .update({ confirmado: false })
-                .eq('id', id);
-
-            if (error) {
-                msg.textContent = 'Erro ao recusar.';
-                return;
-            }
-
-            carregarAgendamentos();
-        }
-
-        async function apagar(id) {
-            const { error } = await client
-                .from('agendamentos')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                msg.textContent = 'Erro ao apagar.';
-                return;
-            }
-
-            carregarAgendamentos();
+            msg.textContent = "Sessão verificada — acesso autorizado.";
         }
 
         verificarSessao();
