@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>As Minhas Consultas - Cliente</title>
+    <title>As Minhas Consultas</title>
 
     <style>
         body {
@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* HEADER */
         .header {
             width: 100%;
             padding: 20px;
@@ -29,54 +28,36 @@
             box-sizing: border-box;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 1.8rem;
-        }
-
         .logout {
             background-color: #ff4d4d;
             color: #fff;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 0;
+            width: 140px;
             border-radius: 6px;
             font-size: 1rem;
             cursor: pointer;
         }
 
-        .logout:hover {
-            background-color: #d93636;
-        }
-
-        /* CONTAINER */
         .container {
             background-color: #fff;
             margin-top: 40px;
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 95%;
-            max-width: 900px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
-        .container h2 {
-            color: #004aad;
-            font-size: 1.3rem;
-            margin-bottom: 25px;
-        }
-
-        /* TABELA */
         table {
             width: 100%;
-            margin-top: 25px;
             border-collapse: collapse;
+            margin-top: 20px;
         }
 
         th, td {
             padding: 10px;
             border-bottom: 1px solid #ddd;
-            font-size: 0.9rem;
             text-align: center;
         }
 
@@ -85,53 +66,19 @@
             color: white;
         }
 
-        .btn-small {
+        .btn-cancelar {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
             padding: 6px 10px;
-            font-size: 0.8rem;
             border-radius: 4px;
             cursor: pointer;
-            border: none;
-            margin: 2px;
         }
 
-        .cancelar {
-            background-color: #ff9800;
-            color: white;
-        }
-
-        /* RESPONSIVIDADE */
-        @media (max-width: 600px) {
-            .header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-
-            .header h1 {
-                font-size: 1.5rem;
-            }
-
-            .logout {
-                width: 100%;
-                padding: 12px;
-                font-size: 1.1rem;
-            }
-
-            .container {
-                width: 100%;
-                padding: 20px;
-                margin-top: 10px;
-                box-shadow: none;
-                border-radius: 0;
-            }
-
-            table {
-                font-size: 0.75rem;
-            }
-
-            th, td {
-                padding: 6px;
-            }
+        #msg {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #ff4d4d;
         }
     </style>
 </head>
@@ -143,86 +90,77 @@
     </div>
 
     <div class="container">
-        <h2>Agendamentos</h2>
-
-        <p id="msg"></p>
-
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Dia</th>
                     <th>Hora</th>
-                    <th>Confirmado</th>
+                    <th>Estado</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody id="tabelaConsultas"></tbody>
         </table>
+
+        <p id="msg"></p>
     </div>
 
-    <!-- Supabase UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
-        const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const client = supabase.createClient(
+            "https://kciuazncizxggwcausbs.supabase.co",
+            "sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt"
+        );
 
-        const msg = document.getElementById('msg');
-        const tabela = document.getElementById('tabelaConsultas');
+        const tabela = document.getElementById("tabelaConsultas");
+        const msg = document.getElementById("msg");
 
-        document.getElementById('btnLogout').onclick = async () => {
+        document.getElementById("btnLogout").onclick = async () => {
             await client.auth.signOut();
-            window.location.href = 'index.html';
+            window.location.href = "index.html";
         };
 
-        async function verificarSessao() {
-            const { data, error } = await client.auth.getUser();
-
-            if (error || !data || !data.user) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const email = data.user.email;
-
-            const { data: userData } = await client
-                .from('utilizadores')
-                .select('tipo')
-                .eq('email', email)
-                .single();
-
-            if (!userData || userData.tipo !== 'cliente') {
-                await client.auth.signOut();
-                window.location.href = 'index.html';
-                return;
-            }
-        }
-
-        verificarSessao();
-
         async function carregarConsultas() {
-            const { data: user } = await client.auth.getUser();
+            const { data: userData } = await client.auth.getUser();
+            if (!userData || !userData.user) {
+                window.location.href = "index.html";
+                return;
+            }
 
+            const userId = userData.user.id;
+
+            // JOIN entre agendamentos e horarios
             const { data, error } = await client
-                .from('agendamentos')
-                .select('*')
-                .eq('email', user.user.email)
-                .order('dia', { ascending: true })
-                .order('hora', { ascending: true });
+                .from("agendamentos")
+                .select(`
+                    id,
+                    estado,
+                    confirmado,
+                    horarios (
+                        dia,
+                        hora
+                    )
+                `)
+                .eq("utilizador_id", userId);
+
+            if (error) {
+                msg.textContent = "Erro ao carregar consultas: " + error.message;
+                return;
+            }
 
             tabela.innerHTML = "";
 
             data.forEach(a => {
                 tabela.innerHTML += `
                     <tr>
-                        <td>${a.id}</td>
-                        <td>${a.dia}</td>
-                        <td>${a.hora}</td>
-                        <td>${a.confirmado ? "Sim" : "Não"}</td>
+                        <td>${a.horarios.dia}</td>
+                        <td>${a.horarios.hora}</td>
+                        <td>${a.estado}</td>
                         <td>
-                            <button class="btn-small cancelar" onclick="cancelar(${a.id})">Cancelar</button>
+                            <button class="btn-cancelar" onclick="cancelar(${a.id})">
+                                Cancelar
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -232,11 +170,18 @@
         carregarConsultas();
 
         async function cancelar(id) {
-            await client
-                .from('agendamentos')
+            const { error } = await client
+                .from("agendamentos")
                 .delete()
-                .eq('id', id);
+                .eq("id", id);
 
+            if (error) {
+                msg.textContent = "Erro ao cancelar: " + error.message;
+                return;
+            }
+
+            msg.style.color = "#00a82d";
+            msg.textContent = "Agendamento cancelado!";
             carregarConsultas();
         }
     </script>
