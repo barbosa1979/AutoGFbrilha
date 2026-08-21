@@ -42,6 +42,7 @@
             border-radius: 6px;
             font-size: 1rem;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
         .logout:hover {
@@ -56,7 +57,8 @@
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
-            width: 400px;
+            width: 90%;
+            max-width: 600px;
         }
 
         .container h2 {
@@ -65,7 +67,7 @@
             margin-bottom: 25px;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
@@ -101,6 +103,7 @@
             padding: 10px;
             border-bottom: 1px solid #ddd;
             font-size: 0.9rem;
+            text-align: center;
         }
 
         th {
@@ -113,6 +116,8 @@
             font-size: 0.8rem;
             border-radius: 4px;
             cursor: pointer;
+            border: none;
+            margin: 2px;
         }
 
         .ocupado {
@@ -127,8 +132,24 @@
 
         /* RESPONSIVIDADE */
         @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .logout {
+                width: 100%;
+                padding: 12px;
+                font-size: 1.1rem;
+            }
+
             .container {
-                width: 90%;
+                width: 95%;
                 padding: 25px;
                 margin-top: 20px;
                 box-shadow: none;
