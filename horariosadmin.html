@@ -34,15 +34,18 @@
             font-size: 1.8rem;
         }
 
+        /* BOTÃO LOGOUT PEQUENO */
         .logout {
             background-color: #ff4d4d;
             color: #fff;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 0;
+            width: 140px;
             border-radius: 6px;
             font-size: 1rem;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            text-align: center;
         }
 
         .logout:hover {
@@ -132,6 +135,7 @@
 
         /* RESPONSIVIDADE */
         @media (max-width: 600px) {
+
             .header {
                 flex-direction: column;
                 gap: 10px;
@@ -143,9 +147,9 @@
             }
 
             .logout {
-                width: 100%;
-                padding: 12px;
-                font-size: 1.1rem;
+                width: 140px;
+                padding: 12px 0;
+                font-size: 1rem;
             }
 
             .container {
