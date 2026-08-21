@@ -3,85 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - AutoGF Brilha</title>
+    <title>Área do Cliente - AutoGF Brilha</title>
 
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/home.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            width: 100%;
+            padding: 20px;
+            background-color: #004aad;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .logout {
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .logout:hover {
+            background-color: #d93636;
+        }
+
+        /* CONTAINER */
+        .container {
+            background-color: #fff;
+            margin-top: 40px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+
+        .container h2 {
+            color: #004aad;
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+        }
+
+        /* MENU */
+        .menu button {
+            background-color: #004aad;
+            color: #fff;
+            border: none;
+            padding: 12px 0;
+            width: 100%;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .menu button:hover {
+            background-color: #003a8c;
+        }
+
+        #msg {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .logout {
+                width: 100%;
+                padding: 12px;
+                font-size: 1.1rem;
+            }
+
+            .container {
+                width: 90%;
+                padding: 25px;
+                margin-top: 20px;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            .menu button {
+                font-size: 1rem;
+                padding: 14px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1 id="titulo">Bem-vindo</h1>
-        <h2 id="subtitulo">Carregando...</h2>
-
-        <button id="btnConsultas">Ver Agendamentos</button>
-        <button id="btnAgendar">Marcar Horário</button>
-        <button id="btnLogout" style="background-color:#c62828;">Logout</button>
-
-        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    <div class="header">
+        <h1>Área do Cliente</h1>
+        <button id="btnLogout" class="logout">Logout</button>
     </div>
 
-    <!-- VERSÃO CORRETA DO SUPABASE PARA GITHUB PAGES -->
+    <div class="container">
+        <h2>Bem-vindo!</h2>
+
+        <div class="menu">
+            <button onclick="window.location.href='agendamento.html'">Agendar Lavagem</button>
+            <button onclick="window.location.href='consultas.html'">As Minhas Consultas</button>
+        </div>
+
+        <p id="msg"></p>
+    </div>
+
+    <!-- Supabase UMD -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
-
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const titulo = document.getElementById('titulo');
-        const subtitulo = document.getElementById('subtitulo');
         const msg = document.getElementById('msg');
-
-        const btnConsultas = document.getElementById('btnConsultas');
-        const btnAgendar = document.getElementById('btnAgendar');
         const btnLogout = document.getElementById('btnLogout');
-
-        btnConsultas.addEventListener('click', () => window.location.href = 'consultas.html');
-        btnAgendar.addEventListener('click', () => window.location.href = 'agendamento.html');
 
         btnLogout.addEventListener('click', async () => {
             await client.auth.signOut();
             window.location.href = 'index.html';
         });
 
-        async function carregarUtilizador() {
-            msg.textContent = 'A verificar sessão...';
-
+        async function verificarSessao() {
             const { data, error } = await client.auth.getUser();
 
             if (error || !data || !data.user) {
-                msg.textContent = 'Não autenticado — a redirecionar...';
-                setTimeout(() => window.location.href = 'index.html', 800);
+                window.location.href = 'index.html';
                 return;
             }
 
-            const user = data.user;
+            const email = data.user.email;
 
-            const { data: dadosUser, error: erroDados } = await client
+            const { data: userData } = await client
                 .from('utilizadores')
-                .select('*')
-                .eq('id', user.id)
+                .select('tipo')
+                .eq('email', email)
                 .single();
 
-            if (erroDados) {
-                msg.textContent = 'Erro ao carregar dados.';
+            if (!userData || userData.tipo !== 'cliente') {
+                await client.auth.signOut();
+                window.location.href = 'index.html';
                 return;
             }
 
-            titulo.textContent = `Bem-vindo, ${dadosUser.nome}`;
-            subtitulo.textContent = `Tipo de conta: ${dadosUser.tipo}`;
-
-            msg.textContent = 'Sessão carregada com sucesso.';
-
-            if (user.email === 'admin@admin.com') {
-                msg.textContent = 'Conta admin — a redirecionar para painel...';
-                setTimeout(() => window.location.href = 'admin.html', 800);
-            }
+            msg.textContent = "Sessão verificada — acesso autorizado.";
         }
 
-        carregarUtilizador();
+        verificarSessao();
     </script>
 </body>
 </html>
