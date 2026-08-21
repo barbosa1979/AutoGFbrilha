@@ -3,121 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendar - AutoGF Brilha</title>
+    <title>Agendar Lavagem - Cliente</title>
 
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/agendamento.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            width: 100%;
+            padding: 20px;
+            background-color: #004aad;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .logout {
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .logout:hover {
+            background-color: #d93636;
+        }
+
+        /* CONTAINER */
+        .container {
+            background-color: #fff;
+            margin-top: 40px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
+
+        .container h2 {
+            color: #004aad;
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #004aad;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        button:hover {
+            background-color: #003a8c;
+        }
+
+        #msg {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 10px;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .logout {
+                width: 100%;
+                padding: 12px;
+                font-size: 1.1rem;
+            }
+
+            .container {
+                width: 90%;
+                padding: 25px;
+                margin-top: 20px;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            button {
+                font-size: 1rem;
+                padding: 14px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Marcar Horário</h1>
-
-        <input type="date" id="dia">
-        <input type="time" id="hora">
-
-        <button id="btnAgendar">Confirmar</button>
-        <button onclick="window.location.href='home.html'">Voltar</button>
-        <button id="btnLogout" style="background-color:#c62828;">Logout</button>
-
-        <p id="msg" style="margin-top:20px; font-size:14px; color:#666;"></p>
+    <div class="header">
+        <h1>Agendar Lavagem</h1>
+        <button id="btnLogout" class="logout">Logout</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="container">
+        <h2>Escolher Horário</h2>
+
+        <select id="dia">
+            <option value="">Selecione o dia</option>
+        </select>
+
+        <select id="hora">
+            <option value="">Selecione a hora</option>
+        </select>
+
+        <button id="btnAgendar">Confirmar Agendamento</button>
+
+        <p id="msg"></p>
+    </div>
+
+    <!-- Supabase UMD -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
     <script>
         const SUPABASE_URL = 'https://kciuazncizxggwcausbs.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Hj1NyO3IbGrxF7TU9-eUFg_keNV4pFt';
-
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const msg = document.getElementById('msg');
-        const btnAgendar = document.getElementById('btnAgendar');
-        const btnLogout = document.getElementById('btnLogout');
+        const diaSelect = document.getElementById('dia');
+        const horaSelect = document.getElementById('hora');
 
-        let utilizadorID = null;
-
-        btnLogout.addEventListener('click', async () => {
-            await supabase.auth.signOut();
+        document.getElementById('btnLogout').onclick = async () => {
+            await client.auth.signOut();
             window.location.href = 'index.html';
-        });
+        };
 
         async function verificarSessao() {
-            msg.textContent = 'A verificar sessão...';
-
-            const { data, error } = await supabase.auth.getUser();
+            const { data, error } = await client.auth.getUser();
 
             if (error || !data || !data.user) {
-                msg.textContent = 'Não autenticado — a redirecionar...';
-                setTimeout(() => window.location.href = 'index.html', 800);
+                window.location.href = 'index.html';
                 return;
             }
 
-            utilizadorID = data.user.id;
-            msg.textContent = '';
+            const email = data.user.email;
+
+            const { data: userData } = await client
+                .from('utilizadores')
+                .select('tipo')
+                .eq('email', email)
+                .single();
+
+            if (!userData || userData.tipo !== 'cliente') {
+                await client.auth.signOut();
+                window.location.href = 'index.html';
+                return;
+            }
         }
 
         verificarSessao();
 
-        btnAgendar.addEventListener('click', async () => {
-            msg.textContent = 'A validar horário...';
+        async function carregarDias() {
+            const { data } = await client
+                .from('horarios')
+                .select('dia')
+                .eq('ocupado', false)
+                .order('dia', { ascending: true });
 
-            const dia = document.getElementById('dia').value;
-            const hora = document.getElementById('hora').value;
+            const diasUnicos = [...new Set(data.map(h => h.dia))];
 
-            if (!dia || !hora) {
-                msg.textContent = 'Preencha dia e hora.';
-                return;
-            }
+            diasUnicos.forEach(d => {
+                diaSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+        }
 
-            const { data: horario } = await supabase
+        carregarDias();
+
+        diaSelect.onchange = async () => {
+            horaSelect.innerHTML = `<option value="">Selecione a hora</option>`;
+
+            const { data } = await client
                 .from('horarios')
                 .select('*')
-                .eq('dia', dia)
-                .eq('hora', hora)
-                .single();
+                .eq('dia', diaSelect.value)
+                .eq('ocupado', false)
+                .order('hora', { ascending: true });
 
-            if (!horario) {
-                msg.textContent = 'Este horário não existe no sistema.';
+            data.forEach(h => {
+                horaSelect.innerHTML += `<option value="${h.hora}">${h.hora}</option>`;
+            });
+        };
+
+        document.getElementById('btnAgendar').onclick = async () => {
+            const dia = diaSelect.value;
+            const hora = horaSelect.value;
+
+            if (!dia || !hora) {
+                msg.textContent = "Selecione o dia e a hora.";
                 return;
             }
 
-            if (horario.ocupado) {
-                msg.textContent = 'Este horário já está ocupado.';
-                return;
-            }
+            const { data: user } = await client.auth.getUser();
 
-            msg.textContent = 'Horário livre — a criar agendamento...';
-
-            const { error: erroAgendamento } = await supabase
+            const { error } = await client
                 .from('agendamentos')
-                .insert({
-                    dia: dia,
-                    hora: hora,
-                    ocupado: true,
-                    confirmado: false,
-                    utilizador_id: utilizadorID
-                });
+                .insert([{
+                    email: user.user.email,
+                    nome: user.user.email.split("@")[0],
+                    telemovel: "000000000",
+                    dia,
+                    hora,
+                    confirmado: false
+                }]);
 
-            if (erroAgendamento) {
-                msg.textContent = 'Erro ao criar agendamento.';
+            if (error) {
+                msg.textContent = "Erro ao agendar.";
                 return;
             }
 
-            const { error: erroUpdate } = await supabase
-                .from('horarios')
-                .update({ ocupado: true })
-                .eq('id', horario.id);
-
-            if (erroUpdate) {
-                msg.textContent = 'Agendamento criado, mas falhou ao atualizar horário.';
-                return;
-            }
-
-            msg.textContent = 'Agendamento criado com sucesso! A redirecionar...';
-
-            setTimeout(() => window.location.href = 'consultas.html', 1000);
-        });
+            msg.textContent = "Agendamento criado com sucesso!";
+        };
     </script>
 </body>
 </html>
